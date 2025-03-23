@@ -1,0 +1,11 @@
+name: ???
+root: ???
+data_path: data/${dataset.root}/
+num_points: 8192
+num_planes: 20
+num_renderings: 24
+input_points_path: data/${dataset.root}/pc
+complete_points_path: data/${dataset.root}/gt
+complete_planes_path: data/${dataset.root}/gt_plane
+bs: ???
+subset: ???

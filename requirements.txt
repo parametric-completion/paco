@@ -1,0 +1,24 @@
+hydra-core==1.3.2
+hydra-colorlog
+omegaconf
+wandb
+torch @ https://download.pytorch.org/whl/cu118/torch-2.6.0%2Bcu118-cp310-cp310-linux_x86_64.whl#sha256=715d3b039a629881f263c40d1fb65edac6786da13bfba221b353ef2371c4da86
+torchvision @ https://download.pytorch.org/whl/cu118/torchvision-0.21.0%2Bcu118-cp310-cp310-linux_x86_64.whl#sha256=aae1fd398fb97a099bd3bd619a85e923c2191d348b90786514c8f81541afd010
+argparse
+easydict
+opencv-python
+tensorboardx
+timm==0.4.5
+tqdm
+transforms3d
+einops
+open3d==0.18.0
+h5py
+numpy
+pyyaml
+scipy
+https://github.com/unlimblue/KNN_CUDA/releases/download/0.2/KNN_CUDA-0.2-py3-none-any.whl
+
+# Below are addressed individually in install.sh
+# git+https://github.com/facebookresearch/pytorch3d.git@stable
+# git+https://github.com/erikwijmans/Pointnet2_PyTorch.git#egg=pointnet2_ops&subdirectory=pointnet2_ops_lib

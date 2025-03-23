@@ -1,0 +1,80 @@
+# Default configuration for the Project.
+# Values shall be overriden by respective dataset configurations.
+
+# default settings
+defaults:
+  - _self_
+  - dataset: abc
+  - model: paco
+  - override hydra/job_logging: custom
+  - override hydra/hydra_logging: colorlog
+
+# general settings
+use_gpu: true
+distributed: false
+world_size: ???
+launcher: pytorch
+num_workers: 4
+seed: 0
+deterministic: false
+sync_bn: false
+
+# experiment settings
+exp_name: default
+start_ckpts: null
+ckpts: null
+val_freq: 1
+resume: false
+debug: false
+test: false
+mode: null  # choices: easy, median, hard, null
+
+# paths
+output_dir: ./outputs/${exp_name}/
+tensorboard_dir: ${output_dir}/tensorboard/
+log_name: ${model.name}
+
+# optimizer settings
+optimizer: 
+  type: AdamW
+  kwargs:
+    lr : 0.0001
+    weight_decay : 0.0005
+
+# scheduler settings
+scheduler:
+  type: LambdaLR
+  kwargs:
+    decay_step: 21
+    lr_decay: 0.9
+    lowest_decay: 0.02  # min lr = lowest_decay * lr
+
+# batch norm scheduler
+bnmscheduler:
+  type: Lambda
+  kwargs:
+    decay_step: 21
+    bn_decay: 0.5
+    bn_momentum: 0.9
+    lowest_decay: 0.01
+
+# training settings
+total_bs : 40
+step_per_update : 1
+max_epoch : 600
+
+# loss weights
+loss:
+  non_obj_class_loss_weight: 0.4
+  repulsion_loss_weight: 2
+  plane_chamfer_loss_weight: 20
+  chamfer_norm2_loss_weight: 20
+  plane_normal_loss_weight: 1
+
+consider_metric: total_loss
+
+# hydra settings
+hydra:
+  run:
+    dir: ${output_dir}
+  verbose: false

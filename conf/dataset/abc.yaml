@@ -1,0 +1,6 @@
+defaults:
+  - _self_
+  - base
+
+name: ABC
+root: abc
