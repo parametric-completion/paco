@@ -83,3 +83,7 @@ If you use PaCo in a scientific work, please consider citing the paper:
 }
 ```
 <br clear="left"/>
+
+## 🙏 Acknowledgements
+
+Part of our implementation is based on the [PoinTr](https://github.com/yuxumin/PoinTr) repository. We appreciate the authors for open-sourcing their great work.
