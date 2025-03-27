@@ -1,7 +1,8 @@
+import os
+
 import h5py
 import numpy as np
 import open3d
-import os
 
 
 class IO:

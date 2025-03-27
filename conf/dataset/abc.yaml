@@ -4,3 +4,4 @@ defaults:
 
 name: ABC
 root: abc
+mode: mixed

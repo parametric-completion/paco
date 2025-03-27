@@ -1,5 +1,6 @@
 from functools import partial
 
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from timm.models.layers import DropPath, trunc_normal_
@@ -8,8 +9,13 @@ from pytorch3d.loss import chamfer_distance
 from scipy.optimize import linear_sum_assignment
 from pointnet2_ops import pointnet2_utils
 
-from .build import MODELS
-from paco.transformer_utils import *
+from . import MODELS
+from .transformer_utils import (
+    LayerScale, MLP, Attention, DeformableLocalAttention,
+    DeformableLocalCrossAttention, DynamicGraphAttention,
+    ImprovedDeformableLocalGraphAttention, CrossAttention,
+    knn_point, index_points
+)
 
 
 class SelfAttnBlockAPI(nn.Module):
@@ -89,6 +95,7 @@ class SelfAttnBlockAPI(nn.Module):
                 self.local_attn = DynamicGraphAttention(dim, k=k)
             elif block_token == 'deform_graph':
                 self.local_attn = ImprovedDeformableLocalGraphAttention(dim, k=k)
+                
         # If both global and local attentions are used, set up merging
         if self.attn is not None and self.local_attn is not None:
             if combine_style == 'concat':
@@ -946,44 +953,44 @@ class SimpleRebuildFCLayer(nn.Module):
 class PCTransformer(nn.Module):
     def __init__(self, config):
         super().__init__()
-        encoder_config = config.encoder_config
-        decoder_config = config.decoder_config
-        self.center_num = getattr(config, 'center_num', [512, 128])
-        self.max_plane = getattr(config, 'max_plane', 20)
+        encoder = config.encoder
+        decoder = config.decoder
+        self.num_centers = getattr(config, 'num_centers', [512, 128])
+        self.num_planes = getattr(config, 'num_planes', 20)
         self.group_k = getattr(config, 'group_k', 32)
         self.query_ranking = getattr(config, 'query_ranking', False)
         self.encoder_type = config.encoder_type
         self.query_type = config.query_type
         in_chans = 3
-        self.num_query = config.num_query
-        query_num = config.num_query
+        self.num_queries = config.num_queries
+        query_num = config.num_queries
         global_feature_dim = config.global_feature_dim
         if self.encoder_type == 'graph':
             self.grouper = DGCNN_Grouper(k=self.group_k)
             self.plane_mlp = nn.Sequential(
-                nn.Linear(encoder_config.embed_dim * 2, encoder_config.embed_dim),
+                nn.Linear(encoder.embed_dim * 2, encoder.embed_dim),
                 nn.GELU()
             )
         else:
-            self.grouper = SimpleEncoder(k=self.group_k, max_plane=self.max_plane)
+            self.grouper = SimpleEncoder(k=self.group_k, num_planes=self.num_planes)
         self.pos_embed = nn.Sequential(
             nn.Linear(in_chans, 128),
             nn.GELU(),
-            nn.Linear(128, encoder_config.embed_dim)
+            nn.Linear(128, encoder.embed_dim)
         )
         self.plane_embed = nn.Sequential(
             nn.Linear(3, 128),
             nn.GELU(),
-            nn.Linear(128, encoder_config.embed_dim)
+            nn.Linear(128, encoder.embed_dim)
         )
         self.input_proj = nn.Sequential(
             nn.Linear(self.grouper.num_features, 512),
             nn.GELU(),
-            nn.Linear(512, encoder_config.embed_dim)
+            nn.Linear(512, encoder.embed_dim)
         )
-        self.encoder = PointTransformerEncoderEntry(encoder_config)
+        self.encoder = PointTransformerEncoderEntry(encoder)
         self.increase_dim = nn.Sequential(
-            nn.Linear(encoder_config.embed_dim, 1024),
+            nn.Linear(encoder.embed_dim, 1024),
             nn.GELU(),
             nn.Linear(1024, global_feature_dim))
         if self.query_type == 'dynamic':
@@ -996,30 +1003,30 @@ class PCTransformer(nn.Module):
                 nn.GELU(),
                 nn.Linear(1024, 1024),
                 nn.GELU(),
-                nn.Linear(1024, decoder_config.embed_dim))
+                nn.Linear(1024, decoder.embed_dim))
             self.plane_pred = nn.Sequential(
-                nn.Linear(decoder_config.embed_dim, decoder_config.embed_dim // 2),
+                nn.Linear(decoder.embed_dim, decoder.embed_dim // 2),
                 nn.GELU(),
-                nn.Linear(decoder_config.embed_dim // 2, 3)
+                nn.Linear(decoder.embed_dim // 2, 3)
             )
         else:
-            self.mlp_query = nn.Embedding(query_num, decoder_config.embed_dim)
+            self.mlp_query = nn.Embedding(query_num, decoder.embed_dim)
             self.plane_pred = nn.Sequential(
-                nn.Linear(decoder_config.embed_dim, decoder_config.embed_dim // 2),
+                nn.Linear(decoder.embed_dim, decoder.embed_dim // 2),
                 nn.GELU(),
-                nn.Linear(decoder_config.embed_dim // 2, 3)
+                nn.Linear(decoder.embed_dim // 2, 3)
             )
-        # assert decoder_config.embed_dim == encoder_config.embed_dim
-        if decoder_config.embed_dim == encoder_config.embed_dim:
+        # assert decoder.embed_dim == encoder.embed_dim
+        if decoder.embed_dim == encoder.embed_dim:
             self.mem_link = nn.Identity()
         else:
-            self.mem_link = nn.Linear(encoder_config.embed_dim, decoder_config.embed_dim)
-        self.decoder = PointTransformerDecoderEntry(decoder_config)
+            self.mem_link = nn.Linear(encoder.embed_dim, decoder.embed_dim)
+        self.decoder = PointTransformerDecoderEntry(decoder)
         if self.query_ranking:
-            self.plane_mlp2 = nn.Sequential(nn.Linear(encoder_config.embed_dim, encoder_config.embed_dim),
+            self.plane_mlp2 = nn.Sequential(nn.Linear(encoder.embed_dim, encoder.embed_dim),
                                             nn.GELU())
             self.query_ranking = nn.Sequential(
-                nn.Linear(decoder_config.embed_dim, 256),
+                nn.Linear(decoder.embed_dim, 256),
                 nn.GELU(),
                 nn.Linear(256, 256),
                 nn.GELU(),
@@ -1039,14 +1046,14 @@ class PCTransformer(nn.Module):
 
     def forward(self, xyz):
         bs, _, _ = xyz.size()
-        coor, f, normal, batch = self.grouper(xyz, self.center_num)
+        coor, f, normal, batch = self.grouper(xyz, self.num_centers)
         pe = self.pos_embed(coor)
         x = self.input_proj(f)
         x = self.encoder(x + pe, coor)
         # from point proxy to plane proxy
         normal_embed = self.plane_embed(normal)
         x = torch.cat([x, normal_embed], dim=-1)
-        plane_encoder = torch.zeros(bs, self.max_plane, x.size(-1)).cuda()
+        plane_encoder = torch.zeros(bs, self.num_planes, x.size(-1)).cuda()
         for i in range(bs):
             unique_batch = torch.unique(batch[i])
             for j, ub in enumerate(unique_batch):
@@ -1055,7 +1062,7 @@ class PCTransformer(nn.Module):
         global_feature = self.increase_dim(x)  # B 1024 N
         global_feature = torch.max(global_feature, dim=1)[0]  # B 1024
         mem = self.mem_link(x)
-        f_plane = torch.zeros(bs, self.max_plane, normal_embed.size(-1)).cuda()
+        f_plane = torch.zeros(bs, self.num_planes, normal_embed.size(-1)).cuda()
         for i in range(bs):
             unique_batch = torch.unique(batch[i])
             f_plane[i][:unique_batch.shape[0]] = x[i][:unique_batch.shape[0]]
@@ -1070,7 +1077,7 @@ class PCTransformer(nn.Module):
                 q = torch.cat([q, f_plane], dim=1)
                 query_ranking = self.query_ranking(q)
                 idx = torch.argsort(query_ranking, dim=1)
-                q = torch.gather(q, 1, idx[:, :self.num_query].expand(-1, -1, q.size(-1)))
+                q = torch.gather(q, 1, idx[:, :self.num_queries].expand(-1, -1, q.size(-1)))
             q = self.decoder(q=q, v=mem, q_pos=None, v_pos=None, denoise_length=0)
             plane = self.plane_pred(q).reshape(bs, -1, 3)
         elif self.query_type == 'static':
@@ -1092,22 +1099,23 @@ class PaCo(nn.Module):
 
     def __init__(self, config, **kwargs):
         super().__init__()
-        self.trans_dim = config.decoder_config.embed_dim
-        self.num_query = config.num_query
+        self.trans_dim = config.decoder.embed_dim
+        self.num_queries = config.num_queries
         self.num_points = getattr(config, 'num_points', None)
         self.decoder_type = config.decoder_type
         self.fold_step = 8
         self.base_model = PCTransformer(config)
+        self.repulsion = config.repulsion
 
         if self.decoder_type == 'fold':
             self.factor = self.fold_step ** 2
             self.decode_head = Fold(self.trans_dim, step=self.fold_step, hidden_dim=256, freedom=2)
         else:
             if self.num_points is not None:
-                self.factor = self.num_points // self.num_query
+                self.factor = self.num_points // self.num_queries
                 self.decode_head = SimpleRebuildFCLayer(
                     self.trans_dim * 2,
-                    step=self.num_points // self.num_query,
+                    step=self.num_points // self.num_queries,
                     freedom=2
                 )
             else:
@@ -1166,12 +1174,6 @@ class PaCo(nn.Module):
         predicted_planes, reconstructed_points = ret
         batch_size, _, _ = class_prob.size()
 
-        # Hyperparameters for repulsion loss
-        num_neighbors = 5
-        epsilon = 1e-12
-        repulsion_kernel_bandwidth = 0.03
-        repulsion_radius = 0.07
-
         device = reconstructed_points.device
         losses = {
             "plane_chamfer_loss": 0.0,
@@ -1193,11 +1195,11 @@ class PaCo(nn.Module):
                 gt[batch_idx, (gt_index[batch_idx] == idx)].reshape(-1, 3)
                 for idx in unique_gt_indices
             ]
-            ground_truth_pointclouds = ground_truth_pointclouds * self.num_query
+            ground_truth_pointclouds = ground_truth_pointclouds * self.num_queries
             ground_truth_pointclouds = Pointclouds(ground_truth_pointclouds).to(device)
 
             # Compute reconstructed point clouds
-            start_indices = torch.arange(self.num_query, device=device) * self.factor
+            start_indices = torch.arange(self.num_queries, device=device) * self.factor
             end_indices = start_indices + self.factor
             reconstructed_pointclouds = [
                 reconstructed_points[batch_idx, start:end].reshape(-1, 3)
@@ -1213,7 +1215,7 @@ class PaCo(nn.Module):
                 ground_truth_pointclouds, reconstructed_pointclouds,
                 point_reduction='mean', batch_reduction=None
             )
-            plane_chamfer_distance = chamfer_distances.view(self.num_query, num_ground_truth_planes)
+            plane_chamfer_distance = chamfer_distances.view(self.num_queries, num_ground_truth_planes)
 
             # Compute Plane Normal Loss
             gt_planes = plane[batch_idx, unique_gt_indices].float()
@@ -1222,33 +1224,33 @@ class PaCo(nn.Module):
             cosine_loss = 1 - F.cosine_similarity(
                 pred_planes[:, :3].unsqueeze(1), gt_planes[:, :3].unsqueeze(0), dim=-1
             )
-            plane_normal_loss = (l2_loss + cosine_loss).view(self.num_query, num_ground_truth_planes)
+            plane_normal_loss = (l2_loss + cosine_loss).view(self.num_queries, num_ground_truth_planes)
 
             # Compute Classification Loss
             classification_scores = class_prob[batch_idx]
             object_class_loss = F.cross_entropy(
                 classification_scores,
-                torch.zeros(self.num_query, dtype=torch.long, device=device),
+                torch.zeros(self.num_queries, dtype=torch.long, device=device),
                 size_average=False, reduce=False
             ).unsqueeze(-1).expand(-1, num_ground_truth_planes)
             non_object_class_loss = F.cross_entropy(
                 classification_scores,
-                torch.ones(self.num_query, dtype=torch.long, device=device),
+                torch.ones(self.num_queries, dtype=torch.long, device=device),
                 size_average=False, reduce=False
             ).unsqueeze(-1).expand(-1, num_ground_truth_planes)
 
             # Calculate repulsion loss for each batch
             reshaped_reconstructed_points = reconstructed_points[batch_idx].view(-1, self.factor, 3)
             neighbor_indices = knn_point(
-                num_neighbors, reshaped_reconstructed_points, reshaped_reconstructed_points
+                self.repulsion.num_neighbors, reshaped_reconstructed_points, reshaped_reconstructed_points
             )[:, :, 1:].long()
             grouped_points = index_points(reshaped_reconstructed_points, neighbor_indices).transpose(2,
                                                                                                      3).contiguous() - reshaped_reconstructed_points.unsqueeze(
                 -1)
-            distance_matrix = torch.sum(grouped_points ** 2, dim=2).clamp(min=epsilon)
-            weight_matrix = torch.exp(-distance_matrix / repulsion_kernel_bandwidth ** 2)
+            distance_matrix = torch.sum(grouped_points ** 2, dim=2).clamp(min=self.repulsion.epsilon)
+            weight_matrix = torch.exp(-distance_matrix / self.repulsion.kernel_bandwidth ** 2)
             repulsion_penalty = torch.mean(
-                (repulsion_radius - distance_matrix.sqrt()) * weight_matrix,
+                (self.repulsion.radius - distance_matrix.sqrt()) * weight_matrix,
                 dim=(1, 2)
             ).clamp(min=0).unsqueeze(-1).expand(-1, num_ground_truth_planes)
 
@@ -1273,7 +1275,7 @@ class PaCo(nn.Module):
 
             # Compute Unmatched Classification Loss
             unmatched_indices = torch.tensor(
-                list(set(range(self.num_query)) - set(hungarian_assignment[0].tolist())),
+                list(set(range(self.num_queries)) - set(hungarian_assignment[0].tolist())),
                 device=device
             )
             unmatched_class_loss = non_object_class_loss[unmatched_indices, 0] * config.non_obj_class_loss_weight
@@ -1313,7 +1315,7 @@ class PaCo(nn.Module):
 
     def forward(self, xyz):
         """
-        Forward pass for the PACO model
+        Forward pass for the model
 
         Args:
             xyz: Input point cloud tensor
@@ -1361,7 +1363,6 @@ class PaCo(nn.Module):
         z_coord = (r2 * torch.cos(theta_point)).unsqueeze(-1)
         rebuild_points = torch.cat([x_coord, y_coord, z_coord], dim=-1)
         rebuild_points = rebuild_points.reshape(B, -1, 3).contiguous()
-        # rebuild_points = torch.nan_to_num(rebuild_points, 1, 1, 1)
         rebuild_points = torch.clamp(rebuild_points, min=-1, max=1)
 
         a = torch.sin(plane[:, :, 0]) * torch.cos(plane[:, :, 1])

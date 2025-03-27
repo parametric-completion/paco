@@ -1,5 +1,6 @@
 from utils import registry
 
+
 # Create a registry for datasets
 DATASETS = registry.Registry('dataset')
 

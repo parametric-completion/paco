@@ -1,7 +1,9 @@
-import torch.utils.data as data
-import numpy as np
-import os, sys
+import os
+import sys
 import random
+
+import numpy as np
+import torch.utils.data as data
 
 # Set up the base directory and add it to the system path for local imports
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -10,7 +12,6 @@ sys.path.append(BASE_DIR)
 import data_transforms
 from .io import IO
 from .build import DATASETS
-from utils.logger import *
 
 
 @DATASETS.register_module()

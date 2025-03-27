@@ -1,8 +1,10 @@
 import inspect
 import warnings
 from functools import partial
-from utils import config
+
 from omegaconf import DictConfig
+
+from . import config
 
 
 class Registry:

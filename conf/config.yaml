@@ -21,18 +21,19 @@ sync_bn: false
 
 # experiment settings
 exp_name: default
-start_ckpts: null
-ckpts: null
 val_freq: 1
-resume: false
+resume_last: false
+resume_from: null
 debug: false
-test: false
-mode: null  # choices: easy, median, hard, null
 
 # paths
-output_dir: ./outputs/${exp_name}/
-tensorboard_dir: ${output_dir}/tensorboard/
 log_name: ${model.name}
+output_dir: ./output/${exp_name}
+tensorboard_dir: ${output_dir}/tensorboard/
+reconstruction_dir: ${output_dir}/reconstructed/
+reference_dir: ${data_path}/gt_mesh/
+csv_path: ${output_dir}/evaluation.csv
+checkpoint_path: ./ckpt/ckpt-best.pth
 
 # optimizer settings
 optimizer: 
@@ -63,15 +64,19 @@ total_bs : 40
 step_per_update : 1
 max_epoch : 600
 
-# loss weights
+# loss settings
 loss:
   non_obj_class_loss_weight: 0.4
   repulsion_loss_weight: 2
   plane_chamfer_loss_weight: 20
   chamfer_norm2_loss_weight: 20
   plane_normal_loss_weight: 1
-
 consider_metric: total_loss
+
+# evaluation settings
+evaluate:
+  keep_vg: false                  
+  num_samples: 10000
 
 # hydra settings
 hydra:

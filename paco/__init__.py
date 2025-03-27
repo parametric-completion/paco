@@ -1,2 +1,4 @@
-from .build import build_model_from_cfg
-import paco.paco_pipeline
+from utils import registry
+MODELS = registry.Registry('models')
+
+from .paco_pipeline import PaCo

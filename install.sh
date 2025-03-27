@@ -21,10 +21,10 @@ pip install --upgrade pip
 echo "Installing pip dependencies..."
 pip install -r requirements.txt
 
-# Now install pointnet2_ops with build isolation disabled so torch is visible during build
+# Now install pointnet2_ops
 echo "Installing pointnet2_ops..."
 pip install "git+https://github.com/erikwijmans/Pointnet2_PyTorch.git#egg=pointnet2_ops&subdirectory=pointnet2_ops_lib"
 
-# Now install pytorch3d with build isolation disabled so that torch is available during build
+# Now install pytorch3d
 echo "Installing pytorch3d..."
 pip install "git+https://github.com/facebookresearch/pytorch3d.git@stable"

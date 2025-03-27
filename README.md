@@ -10,7 +10,6 @@ PaCo implements parametric completion, a new point cloud completion paradigm tha
   <img src="assets/teaser.gif" alt="teaser" width="650px">
 </p>
 
-
 ## 🛠️ Setup
 
 ### Prerequisites
@@ -51,6 +50,22 @@ CUDA_VISIBLE_DEVICES=0,1 ./scripts/train_ddp.sh
 CUDA_VISIBLE_DEVICES=0,1 ./scripts/train_dp.sh
 ```
 
+Monitor training progress using TensorBoard:
+
+```bash
+# Replace ${exp_name} with your experiment name (e.g., default)
+# Board typically available at http://localhost:6006
+tensorboard --logdir './outputs/${exp_name}/tensorboard'
+```
+
+### 📊 Evaluation
+
+Start evaluation of the reconstruction:
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1 ./scripts/test.sh
+```
+
 ### ⚙️ Available configurations
 ```bash
 # check available configurations for training
@@ -78,7 +93,7 @@ If you use PaCo in a scientific work, please consider citing the paper:
 @InProceedings{chen2025paco,
     title={Parametric Point Cloud Completion for Polygonal Surface Reconstruction}, 
     author={Zhaiyu Chen and Yuqing Wang and Liangliang Nan and Xiao Xiang Zhu},
-    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+    booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
     year={2025}
 }
 ```
@@ -86,4 +101,4 @@ If you use PaCo in a scientific work, please consider citing the paper:
 
 ## 🙏 Acknowledgements
 
-Part of our implementation is based on the [PoinTr](https://github.com/yuxumin/PoinTr) repository. We appreciate the authors for open-sourcing their great work.
+Part of our implementation is based on the [PoinTr](https://github.com/yuxumin/PoinTr) repository. We thank the authors for open-sourcing their great work.

@@ -3,12 +3,12 @@ import os
 import torch
 from tensorboardX import SummaryWriter
 import hydra
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 
 from utils import dist_utils, misc
 from utils.runner import run_trainer
-from utils.logger import *
-from utils.config import *
+from utils.logger import get_root_logger
+from utils.config import create_experiment_dir
 
 
 @hydra.main(config_path="conf", config_name="config", version_base="1.2")
@@ -27,12 +27,12 @@ def train(cfg: DictConfig):
             _, world_size = dist_utils.get_dist_info()
             cfg.world_size = world_size
     
-    # Retrieve the local rank
+    # Retrieve local rank
     local_rank = int(os.environ["LOCAL_RANK"])
     
     create_experiment_dir(cfg)
 
-    # Set up the logger
+    # Set up logger
     logger = get_root_logger(name=cfg.log_name)
 
     # Initialize TensorBoard writers for training and validation
@@ -44,7 +44,7 @@ def train(cfg: DictConfig):
         train_writer = None
         val_writer = None
 
-    # Adjust the batch size based on the distributed training setting
+    # Adjust batch size based on the distributed training setting
     if cfg.distributed:
         assert cfg.total_bs % world_size == 0, "Total batch size must be divisible by world size."
         cfg.dataset.bs = cfg.total_bs // world_size
@@ -61,7 +61,7 @@ def train(cfg: DictConfig):
             logger.info(f'Set random seed to {cfg.seed}, deterministic: {cfg.deterministic}')
         misc.set_random_seed(cfg.seed + local_rank, deterministic=cfg.deterministic)
 
-    # In distributed mode, confirm that the local rank matches the distributed rank
+    # In distributed mode, confirm local rank matches the distributed rank
     if cfg.distributed:
         assert local_rank == torch.distributed.get_rank(), "Local rank does not match distributed rank."
 

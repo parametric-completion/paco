@@ -1,31 +1,39 @@
-    name: PaCo
-    num_query: 40
-    max_plane: 20
-    num_points: 51200
-    center_num: [128, 128]
-    group_k: 32
-    global_feature_dim: 1024
-    encoder_type: graph
-    decoder_type: fc
-    query_type: dynamic
-    encoder_config: 
-      embed_dim: 384
-      depth: 8
-      num_heads: 6
-      k: 8
-      n_group: 2
-      mlp_ratio: 2.
-      block_style_list: ['attn-graph', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn']
-      combine_style: 'concat'
+name: PaCo
+num_queries: 40
+num_planes: 20
+num_points: 51200
+num_centers: [128, 128]
+group_k: 32
+global_feature_dim: 1024
 
-    decoder_config:
-      embed_dim: 384
-      depth: 12
-      num_heads: 6
-      k: 8
-      n_group: 2
-      mlp_ratio: 2.
-      self_attn_block_style_list: ['attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn']
-      self_attn_combine_style: 'concat'
-      cross_attn_block_style_list: ['attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn']
-      cross_attn_combine_style: 'concat'
+encoder_type: graph
+decoder_type: fc
+query_type: dynamic
+
+encoder: 
+  embed_dim: 384
+  depth: 8
+  num_heads: 6
+  k: 8
+  n_group: 2
+  mlp_ratio: 2.
+  block_style_list: ['attn-graph', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn']
+  combine_style: 'concat'
+
+decoder:
+  embed_dim: 384
+  depth: 12
+  num_heads: 6
+  k: 8
+  n_group: 2
+  mlp_ratio: 2.
+  self_attn_block_style_list: ['attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn']
+  self_attn_combine_style: 'concat'
+  cross_attn_block_style_list: ['attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn', 'attn']
+  cross_attn_combine_style: 'concat'
+
+repulsion:
+  num_neighbors: 5
+  epsilon: 1e-12
+  radius: 0.07
+  kernel_bandwidth: 0.03

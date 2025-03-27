@@ -1,9 +1,25 @@
+import os
+
+import torch
 import torch.optim as optim
 from timm.scheduler import CosineLRScheduler
-from utils.data_utils import build_dataset_from_cfg
-from paco import build_model_from_cfg
-from utils.logger import *
-from utils.misc import *
+
+from .data_utils import build_dataset_from_cfg
+from .logger import print_log
+from .misc import build_lambda_sche, GradualWarmupScheduler, build_lambda_bnsche, worker_init_fn
+
+
+def build_model_from_cfg(cfg, **kwargs):
+    """
+    Build a dataset, defined by `dataset_name`.
+    Args:
+        cfg: Model configuration
+    Returns:
+        Dataset: a constructed dataset specified by dataset_name.
+    """
+    from paco import MODELS
+
+    return MODELS.build(cfg, **kwargs)
 
 
 def dataset_builder(args, config, logger=None):
@@ -150,11 +166,11 @@ def resume_model(base_model, args, logger=None):
     Returns:
         tuple: (start_epoch, best_metrics) from the checkpoint
     """
-    ckpt_path = os.path.join(args.experiment_path, 'ckpt-last.pth')
+    ckpt_path = os.path.join(args.output_dir, 'ckpt-last.pth')
     if not os.path.exists(ckpt_path):
-        print_log(f'[RESUME INFO] no checkpoint file from path {ckpt_path}...', logger=logger)
+        print_log(f'[RESUME] no checkpoint file from path {ckpt_path}...', logger=logger)
         return 0, 0
-    print_log(f'[RESUME INFO] Loading model weights from {ckpt_path}...', logger=logger)
+    print_log(f'[RESUME] Loading model weights from {ckpt_path}...', logger=logger)
 
     # Load state dict
     map_location = {'cuda:%d' % 0: 'cuda:%d' % int(os.environ["LOCAL_RANK"])}
@@ -169,7 +185,7 @@ def resume_model(base_model, args, logger=None):
     if not isinstance(best_metrics, dict):
         best_metrics = best_metrics
 
-    print_log(f'[RESUME INFO] resume ckpts @ {start_epoch - 1} epoch( best_metrics = {str(best_metrics):s})',
+    print_log(f'[RESUME] resume checkpoint @ {start_epoch - 1} epoch( best_metrics = {str(best_metrics):s})',
               logger=logger)
     return start_epoch, best_metrics
 
@@ -185,11 +201,11 @@ def resume_optimizer(optimizer, args, logger=None):
     Returns:
         int: Status code (0 on success)
     """
-    ckpt_path = os.path.join(args.experiment_path, 'ckpt-last.pth')
+    ckpt_path = os.path.join(args.output_dir, 'ckpt-last.pth')
     if not os.path.exists(ckpt_path):
-        print_log(f'[RESUME INFO] no checkpoint file from path {ckpt_path}...', logger=logger)
+        print_log(f'[RESUME] no checkpoint file from path {ckpt_path}...', logger=logger)
         return 0, 0, 0
-    print_log(f'[RESUME INFO] Loading optimizer from {ckpt_path}...', logger=logger)
+    print_log(f'[RESUME] Loading optimizer from {ckpt_path}...', logger=logger)
     # Load state dict
     state_dict = torch.load(ckpt_path, map_location='cpu')
     # Restore optimizer state
@@ -234,7 +250,7 @@ def load_model(base_model, ckpt_path, logger=None):
         RuntimeError: If checkpoint weights don't match model structure
     """
     if not os.path.exists(ckpt_path):
-        raise NotImplementedError('no checkpoint file from path %s...' % ckpt_path)
+        raise NotImplementedError('No checkpoint file from path %s...' % ckpt_path)
     print_log(f'Loading weights from {ckpt_path}...', logger=logger)
 
     # Load state dict
@@ -245,7 +261,7 @@ def load_model(base_model, ckpt_path, logger=None):
     elif state_dict.get('base_model') is not None:
         base_ckpt = {k.replace("module.", ""): v for k, v in state_dict['base_model'].items()}
     else:
-        raise RuntimeError('mismatch of ckpt weight')
+        raise RuntimeError("Mismatch of checkpoint's weights")
     base_model.load_state_dict(base_ckpt)
 
     # Extract additional information if available
@@ -258,5 +274,5 @@ def load_model(base_model, ckpt_path, logger=None):
             metrics = metrics.state_dict()
     else:
         metrics = 'No Metrics'
-    print_log(f'ckpts @ {epoch} epoch( performance = {str(metrics):s})', logger=logger)
+    print_log(f'Checkpoint @ {epoch} epoch with {str(metrics):s}', logger=logger)
     return

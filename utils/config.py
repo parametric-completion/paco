@@ -1,6 +1,7 @@
 import yaml
 from easydict import EasyDict
 import os
+
 from .logger import print_log
 
 
@@ -50,7 +51,7 @@ def cfg_from_yaml_file(cfg_file):
 
 
 def get_config(args, logger=None):
-    if args.resume:
+    if args.resume_last:
         cfg_path = os.path.join(args.output_dir, 'config.yaml')
         if not os.path.exists(cfg_path):
             print_log("Failed to resume", logger=logger)
@@ -58,7 +59,7 @@ def get_config(args, logger=None):
         print_log(f'Resume yaml from {cfg_path}', logger=logger)
         args.config = cfg_path
     config = cfg_from_yaml_file(args.config)
-    if not args.resume and int(os.environ["LOCAL_RANK"]) == 0:
+    if not args.resume_last and int(os.environ["LOCAL_RANK"]) == 0:
         save_experiment_config(args, config, logger)
     return config
 
@@ -76,3 +77,8 @@ def create_experiment_dir(args):
     if not os.path.exists(args.tensorboard_dir):
         os.makedirs(args.tensorboard_dir, exist_ok=True)
         print('Create tensorboard_dir successfully at %s' % args.tensorboard_dir)
+        
+def create_evaluation_result_dir(args):
+    if not os.path.exists(args.reconstruction_dir):
+        os.makedirs(args.reconstruction_dir, exist_ok=True)
+        print('Create reconstruction_dir successfully at %s' % args.reconstruction_dir)

@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 from utils import builder, dist_utils
-from utils.logger import *
+from utils.logger import get_logger, print_log
 from utils.average_meter import AverageMeter
 
 
@@ -61,10 +61,10 @@ def run_trainer(cfg, train_writer=None, val_writer=None):
     metrics = None
 
     # Load checkpoints if resuming training or starting from pretrained model
-    if cfg.resume:
+    if cfg.resume_last:
         start_epoch, best_metrics = builder.resume_model(base_model, cfg, logger=logger)
-    elif cfg.start_ckpts is not None:
-        builder.load_model(base_model, cfg.start_ckpts, logger=logger)
+    elif cfg.resume_from is not None:
+        builder.load_model(base_model, cfg.resume_from, logger=logger)
 
     # Print model information for debugging
     if cfg.debug:
@@ -98,7 +98,7 @@ def run_trainer(cfg, train_writer=None, val_writer=None):
     # Set up optimizer and learning rate scheduler
     optimizer = builder.build_optimizer(base_model, cfg)
 
-    if cfg.resume:
+    if cfg.resume_last:
         builder.resume_optimizer(optimizer, cfg, logger=logger)
     scheduler = builder.build_scheduler(base_model, optimizer, cfg, last_epoch=start_epoch - 1)
 

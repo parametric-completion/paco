@@ -138,6 +138,6 @@ dmypy.json
 *.pt
 *.npy
 /data
-/outputs
+/output
 /demo
-/checkpoints
+/ckpt

@@ -1,15 +1,16 @@
+import random
+import os
+from collections import abc
+
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import os
-from collections import abc
-from pointnet2_ops import pointnet2_utils
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from pointnet2_ops import pointnet2_utils
 
 
 def jitter_points(pc, std=0.01, clip=0.05):
