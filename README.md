@@ -103,7 +103,7 @@ Alternatively, review the main configuration file: `conf/config.yaml`.
 
 ## 🚧 TODOs
 
-- [x] Demo and Pretrained weights
+- [x] Demo and pretrained weights
 - [ ] Dataset and evaluation script
 - [ ] Hugging Face space
 
