@@ -1,0 +1,12 @@
+hydra-core==1.3.2
+hydra-colorlog
+omegaconf
+argparse
+easydict
+pyyaml
+timm==0.4.5
+einops
+open3d
+trimesh==4.0.5
+wurlitzer
+https://github.com/LiangliangNan/PolyFit/releases/download/v1.6.0/polyfit-1.6.0-cp311-cp311-linux_x86_64.whl

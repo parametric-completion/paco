@@ -12,12 +12,14 @@ timm==0.4.5
 tqdm
 transforms3d
 einops
-open3d==0.18.0
 h5py
 numpy
 pyyaml
 scipy
+wurlitzer==3.1.1
+trimesh==4.0.5
 https://github.com/unlimblue/KNN_CUDA/releases/download/0.2/KNN_CUDA-0.2-py3-none-any.whl
+https://github.com/LiangliangNan/PolyFit/releases/download/v1.6.0/polyfit-1.6.0-cp310-cp310-linux_x86_64.whl
 
 # Below are addressed individually in install.sh
 # git+https://github.com/facebookresearch/pytorch3d.git@stable
