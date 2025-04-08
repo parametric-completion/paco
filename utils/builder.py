@@ -274,5 +274,6 @@ def load_model(base_model, ckpt_path, logger=None):
             metrics = metrics.state_dict()
     else:
         metrics = 'No Metrics'
-    print_log(f'Checkpoint @ {epoch} epoch with {str(metrics):s}', logger=logger)
+    if state_dict.get('metrics') is not None and state_dict.get('best_metrics') is not None:
+        print_log(f'Checkpoint @ {epoch} epoch with {str(metrics):s}', logger=logger)
     return

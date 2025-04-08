@@ -4,9 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from timm.models.layers import DropPath, trunc_normal_
-from pytorch3d.structures import Pointclouds
-from pytorch3d.loss import chamfer_distance
-from scipy.optimize import linear_sum_assignment
 from pointnet2_ops import pointnet2_utils
 
 from . import MODELS
@@ -1171,6 +1168,10 @@ class PaCo(nn.Module):
         Returns:
             Dictionary of computed losses
         """
+        from pytorch3d.structures import Pointclouds
+        from pytorch3d.loss import chamfer_distance
+        from scipy.optimize import linear_sum_assignment
+        
         predicted_planes, reconstructed_points = ret
         batch_size, _, _ = class_prob.size()
 

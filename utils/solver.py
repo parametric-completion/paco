@@ -1,17 +1,38 @@
 import os
-import multiprocessing
 import io
 import sys
 import copy
+from multiprocessing import Pool
+from multiprocessing.context import TimeoutError as MPTimeout
+from io import StringIO
+from wurlitzer import pipes, STDOUT
 
 import numpy as np
 import torch
 import torch.nn.functional as F
-import polyfit
+
+try:
+    # in case locally built PolyFit as in `install.sh`
+    sys.path.append("./utils/polyfit/release/lib/python")
+    import polyfit
+except ImportError:
+    print("PolyFit not found. Exiting.")
+    exit(1)
 
 from utils import builder
 
+def run_tasks_with_timeout(tasks, timeout, num_workers):
+    with Pool(processes=num_workers) as pool:
+        async_results = []
+        for i, task in enumerate(tasks):
+            async_results.append(pool.apply_async(solve, task))
 
+        for i, async_result in enumerate(async_results):
+            try:
+                async_result.get(timeout=timeout)
+            except MPTimeout:
+                print(f"[Timeout] Task {i} (model {tasks[i][-2]}) timed out.", file=sys.stderr)
+                
 def save_vg(points, planes, normal, filepath, group_num=1280):
     """
     Save the processed point cloud data into a .vg file.
@@ -70,7 +91,7 @@ def save_vg(points, planes, normal, filepath, group_num=1280):
         fout.writelines(out)
 
 
-def solve_polyfit(input_file, obj_file):
+def solve_polyfit(input_file, obj_file, solver="SCIP"): 
     """
     Run PolyFit reconstruction solver and save the result as OBJ file.
     
@@ -86,15 +107,26 @@ def solve_polyfit(input_file, obj_file):
     if not point_cloud:
         print(f"Failed loading point cloud from file: {input_file}", file=sys.stderr)
         sys.exit(1)
-
-    mesh = polyfit.reconstruct(point_cloud, polyfit.SCIP)
-    polyfit.save_mesh(obj_file, mesh)
+    out = StringIO()
+    if solver == "SCIP" and hasattr(polyfit, "SCIP"):
+        with pipes(stdout=out, stderr=STDOUT):
+            mesh = polyfit.reconstruct(point_cloud, polyfit.SCIP)
+    elif solver == "GUROBI" and hasattr(polyfit, "GUROBI"):
+        with pipes(logger, stderr=STDOUT):
+            mesh = polyfit.reconstruct(point_cloud, polyfit.GUROBI)
+    else:
+        raise ValueError(f"Please specify a valid solver: SCIP or GUROBI and make sure it is available.")
+    
+    if mesh is None:
+        raise RuntimeError("Reconstruction failed.")
+    else:
+        polyfit.save_mesh(obj_file, mesh)
 
 
 def solve(dense_points, plane_params, class_prob, model_id, cfg):
     """
     Post-process the network output and run reconstruction pipeline.
-    
+     
     Parameters
     ----------
     dense_points: np.ndarray
@@ -120,8 +152,11 @@ def solve(dense_points, plane_params, class_prob, model_id, cfg):
 
     # Run PolyFit reconstruction to generate mesh
     obj_file = os.path.join(cfg.reconstruction_dir, model_id + '.obj')
-    solve_polyfit(vg_file, obj_file)
-
+    try:
+        solve_polyfit(vg_file, obj_file, solver=cfg.evaluate.solver)
+    except Exception as e:
+        print(f"Failed to reconstruct {model_id}")
+        
     # Clean up intermediate files if not needed
     if not cfg.evaluate.keep_vg:
         os.remove(vg_file)
@@ -142,6 +177,16 @@ def reconstruct(cfg):
 
     base_model.cuda()
     base_model.eval()
+    
+    if cfg.evaluate.single_file_path is not None:
+        file_path = cfg.evaluate.single_file_path
+        pc =  np.load(file_path).astype(np.float32)
+        pc = torch.from_numpy(pc).float().unsqueeze(0).cuda()
+        with torch.no_grad():
+            ret, class_prob = base_model(pc)
+            class_prob = F.softmax(class_prob, dim=-1)
+        solve(ret[-1].squeeze(0).cpu().numpy(), ret[-2].squeeze(0).cpu().numpy(), class_prob.squeeze(0).cpu().numpy(), file_path.split('/')[-1].split('.')[0], cfg)
+        return
 
     # Prepare test dataloader
     test_config = copy.deepcopy(cfg.dataset)
@@ -165,6 +210,4 @@ def reconstruct(cfg):
             )
             tasks.append(sample)
 
-    # Process results in parallel
-    with multiprocessing.Pool(processes=cfg.num_workers) as pool:
-        pool.starmap(solve, tasks)
+    run_tasks_with_timeout(tasks, cfg.evaluate.time_out, cfg.num_workers)

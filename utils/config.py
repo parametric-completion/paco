@@ -78,7 +78,7 @@ def create_experiment_dir(args):
         os.makedirs(args.tensorboard_dir, exist_ok=True)
         print('Create tensorboard_dir successfully at %s' % args.tensorboard_dir)
         
-def create_evaluation_result_dir(args):
+def create_reconstruction_result_dir(args):
     if not os.path.exists(args.reconstruction_dir):
         os.makedirs(args.reconstruction_dir, exist_ok=True)
         print('Create reconstruction_dir successfully at %s' % args.reconstruction_dir)

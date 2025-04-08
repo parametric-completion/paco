@@ -83,11 +83,12 @@ def _chamfer_distance_single_file(file_in, file_ref, samples_per_model, num_proc
             Sampled points, shape (num_samples, 3)
         """
         try:
-            mesh = trimesh.load(mesh_file)
+            mesh = trimesh.load(mesh_file, process=False)
+            samples, face_indices = trimesh.sample.sample_surface(mesh, num_samples)
+            return samples
         except:
             return np.zeros((0, 3))
-        samples, face_indices = trimesh.sample.sample_surface_even(mesh, num_samples)
-        return samples
+       
 
     new_mesh_samples = sample_mesh(file_in, samples_per_model)
     ref_mesh_samples = sample_mesh(file_ref, samples_per_model)
@@ -105,7 +106,7 @@ def _chamfer_distance_single_file(file_in, file_ref, samples_per_model, num_proc
 
     ref_new_dist_sum = np.sum(ref_new_dist)
     new_ref_dist_sum = np.sum(new_ref_dist)
-    chamfer_dist = ref_new_dist_sum + new_ref_dist_sum
+    chamfer_dist = (ref_new_dist_sum + new_ref_dist_sum) / samples_per_model
 
     return file_in, file_ref, chamfer_dist
 
@@ -148,11 +149,12 @@ def _hausdorff_distance_single_file(file_in, file_ref, samples_per_model):
             Sampled points, shape (num_samples, 3)
         """
         try:
-            mesh = trimesh.load(mesh_file)
+            mesh = trimesh.load(mesh_file, process=False)
+            samples, face_indices = trimesh.sample.sample_surface(mesh, num_samples)
+            return samples
         except:
             return np.zeros((0, 3))
-        samples, face_indices = trimesh.sample.sample_surface_even(mesh, num_samples)
-        return samples
+        
 
     new_mesh_samples = sample_mesh(file_in, samples_per_model)
     ref_mesh_samples = sample_mesh(file_ref, samples_per_model)
@@ -208,20 +210,21 @@ def _normal_consistency(file_in, file_ref, samples_per_model, num_processes=1):
             (sampled_points, sampled_normals)
         """
         try:
-            mesh = trimesh.load(mesh_file)
+            mesh = trimesh.load(mesh_file, process=False)
+            samples, sample_face_indices = trimesh.sample.sample_surface(mesh, num_samples)
+            face_normals = np.array(mesh.face_normals)
+            normals = face_normals[sample_face_indices]
+            return samples, normals
         except:
-            return np.zeros((0, 3))
-        samples, sample_face_indices = trimesh.sample.sample_surface_even(mesh, num_samples)
-        face_normals = np.array(mesh.face_normals)
-        normals = face_normals[sample_face_indices]
-        return samples, normals
+            return np.zeros((0, 3)), np.zeros((0, 3))
+        
 
     new_mesh_samples, new_normals = sample_mesh(file_in, samples_per_model)
     ref_mesh_samples, ref_normals = sample_mesh(file_ref, samples_per_model)
    
 
     if new_mesh_samples.shape[0] == 0 or ref_mesh_samples.shape[0] == 0:
-        return file_in, file_ref, 0
+        return file_in, file_ref, 0.0
 
     leaf_size = 100
     sys.setrecursionlimit(int(max(1000, round(new_mesh_samples.shape[0] / leaf_size))))
@@ -341,6 +344,10 @@ def mesh_comparison(new_meshes_dir_abs, ref_meshes_dir_abs,
                 call_params.append((new_mesh_file_abs, ref_mesh_file_abs, samples_per_model, 1))
     results_normal = start_process_pool(_normal_consistency, call_params, num_processes)
     results = [r + (str(results_normal[ri][2]),) for ri, r in enumerate(results)]
+    
+    # filter out failed results
+    failed_results = [r for r in results if r[-1] == "0.0"]
+    results = [r for r in results if r[-1] != "0.0"]
 
     
     for fi, new_mesh_file in enumerate(new_mesh_files):
@@ -350,7 +357,7 @@ def mesh_comparison(new_meshes_dir_abs, ref_meshes_dir_abs,
                 ref_mesh_files_matching = ref_mesh_for_new_mesh(new_mesh_file, ref_mesh_files)
                 if len(ref_mesh_files_matching) > 0:
                     reference_mesh_file_abs = os.path.join(ref_meshes_dir_abs, ref_mesh_files_matching[0])
-                    results.append((new_mesh_file_abs, reference_mesh_file_abs, str(2), str(2), str(2), str(2), str(0)))
+                    failed_results.append((new_mesh_file_abs, reference_mesh_file_abs, str(2), str(2), str(2), str(2), str(0)))
         else:
             mesh_files_to_compare_set.remove(new_mesh_file)
             
@@ -358,12 +365,15 @@ def mesh_comparison(new_meshes_dir_abs, ref_meshes_dir_abs,
     for ref_without_new_mesh in mesh_files_to_compare_set:
         new_mesh_file_abs = os.path.join(new_meshes_dir_abs, ref_without_new_mesh)
         reference_mesh_file_abs = os.path.join(ref_meshes_dir_abs, ref_without_new_mesh)
-        results.append((new_mesh_file_abs, reference_mesh_file_abs, str(1), str(1), str(1), str(1), str(0)))
+        failed_results.append((new_mesh_file_abs, reference_mesh_file_abs, str(1), str(1), str(1), str(1), str(0)))
 
     # sort by file name
+    failed_results = sorted(failed_results, key=lambda x: x[0])
     results = sorted(results, key=lambda x: x[0])
     with open(report_name, 'w') as f:
         f.write('in mesh,ref mesh,Hausdorff dist new-ref,Hausdorff dist ref-new,Hausdorff dist,Chamfer dist(1: no input),Normal consistency(0: no input)\n')
+        for r in failed_results:
+            f.write(','.join(r) + '\n')
         for r in results:
             f.write(','.join(r) + '\n')
 

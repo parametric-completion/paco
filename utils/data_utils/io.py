@@ -2,7 +2,6 @@ import os
 
 import h5py
 import numpy as np
-import open3d
 
 
 class IO:
@@ -28,8 +27,6 @@ class IO:
 
         if file_extension in ['.npy']:
             return cls._read_npy(file_path)
-        elif file_extension in ['.pcd', '.ply']:
-            return cls._read_pcd(file_path)
         elif file_extension in ['.h5']:
             return cls._read_h5(file_path)
         elif file_extension in ['.txt']:
@@ -49,21 +46,6 @@ class IO:
             numpy.ndarray: The array loaded from the file.
         """
         return np.load(file_path)
-
-    @classmethod
-    def _read_pcd(cls, file_path):
-        """
-        Read a point cloud file (.pcd or .ply) using Open3D and return the points as a numpy array.
-
-        Args:
-            file_path (str): The path to the point cloud file.
-
-        Returns:
-            numpy.ndarray: Array of point coordinates.
-        """
-        pc = open3d.io.read_point_cloud(file_path)
-        ptcloud = np.array(pc.points)
-        return ptcloud
 
     @classmethod
     def _read_txt(cls, file_path):

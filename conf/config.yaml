@@ -31,7 +31,7 @@ log_name: ${model.name}
 output_dir: ./output/${exp_name}
 tensorboard_dir: ${output_dir}/tensorboard/
 reconstruction_dir: ${output_dir}/reconstructed/
-reference_dir: ${data_path}/gt_mesh/
+reference_dir: ${dataset.data_path}/eval/ref_obj
 csv_path: ${output_dir}/evaluation.csv
 checkpoint_path: ./ckpt/ckpt-best.pth
 
@@ -60,7 +60,7 @@ bnmscheduler:
     lowest_decay: 0.01
 
 # training settings
-total_bs : 40
+total_bs : 80
 step_per_update : 1
 max_epoch : 600
 
@@ -75,8 +75,11 @@ consider_metric: total_loss
 
 # evaluation settings
 evaluate:
-  keep_vg: false                  
+  keep_vg: false
   num_samples: 10000
+  time_out: 300
+  solver: "SCIP"
+  single_file_path: null
 
 # hydra settings
 hydra:
