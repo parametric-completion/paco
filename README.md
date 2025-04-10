@@ -78,7 +78,11 @@ The code has been tested with Python 3.10, PyTorch 2.6.0 and CUDA 11.8.
    ./scripts/install_polyfit.sh
    ```
 
-* (Optional) Download pretrained weights: [<img src="https://img.shields.io/badge/OneDrive-blue"/>](https://1drv.ms/f/s!AseUjD457t0Sg-ZumbwMwsOliiwDRw?e=H7I5F4) to `./ckpt/ckpt-best.pth`.
+* (Optional) Download pretrained weights: [<img src="https://img.shields.io/badge/OneDrive-blue"/>](https://1drv.ms/f/s!AseUjD457t0Sg-ZumbwMwsOliiwDRw?e=H7I5F4) to `./ckpt/ckpt-best.pth`:
+  
+   ```bash
+   python ./scripts/download_ckpt.py
+   ```
 
 * Start evaluation of the reconstruction:
   
@@ -103,7 +107,7 @@ Alternatively, review the main configuration file: `conf/config.yaml`.
 
 ## 🚧 TODOs
 
-- [x] Demo and Pretrained weights
+- [x] Demo and pretrained weights
 - [ ] Dataset and evaluation script
 - [ ] Hugging Face space
 
