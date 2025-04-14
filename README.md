@@ -1,8 +1,12 @@
 # PaCo: Parametric Point Cloud Completion
 
------------
+**CVPR 2025**
+
 [![Website](https://img.shields.io/badge/Project-Website-blue)](https://parametric-completion.github.io)
-[![arXiv](https://img.shields.io/badge/arXiv-PDF-b31b1b)](https://arxiv.org/abs/2503.08363) 
+[![arXiv](https://img.shields.io/badge/arXiv-PDF-b31b1b)](https://arxiv.org/abs/2503.08363)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://raw.githubusercontent.com/parametric-completion/paco/main/LICENSE)
+
+-----
 
 PaCo implements parametric completion, a new point cloud completion paradigm that recovers parametric primitives rather than individual points, for **polygonal surface reconstruction**.
 
@@ -14,7 +18,7 @@ PaCo implements parametric completion, a new point cloud completion paradigm tha
 
 Simply click the badge below to run the demo:
 
-[<img src="https://colab.research.google.com/assets/colab-badge.svg" height="26"/>](https://colab.research.google.com/github/parametric-completion/paco/blob/main/demo/demo.ipynb)
+[<img src="https://colab.research.google.com/assets/colab-badge.svg" height="24"/>](https://colab.research.google.com/github/parametric-completion/paco/blob/main/demo/demo.ipynb)
 
 ## 🛠️ Setup
 
@@ -44,7 +48,7 @@ The code has been tested with Python 3.10, PyTorch 2.6.0 and CUDA 11.8.
 
 ## 🚀 Usage
 
-* Download the preprocessed ABC data: [<img src="https://img.shields.io/badge/OneDrive-blue"/>]() to `./data/abc`:
+* Download the preprocessed ABC data: [<img src="https://img.shields.io/badge/OneDrive-blue"/>](https://1drv.ms/u/s!AseUjD457t0Sg-gwSKQ4cC9QIU3jvg) to `./data/abc`:
   
    ```bash
    python ./scripts/download_data.py
