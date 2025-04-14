@@ -1,0 +1,19 @@
+name: Question
+description: Ask a question.
+title: "[Question]: "
+labels: ["question"]
+
+assignees:
+  - chenzhaiyu
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Any question is welcome!
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: Please be concise and specific. The more details you provide, the better we can help you.
+    validations:
+      required: true
