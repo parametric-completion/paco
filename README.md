@@ -44,6 +44,18 @@ The code has been tested with Python 3.10, PyTorch 2.6.0 and CUDA 11.8.
 
 ## 🚀 Usage
 
+* Download the preprocessed ABC data: [<img src="https://img.shields.io/badge/OneDrive-blue"/>]() to `./data/abc`:
+  
+   ```bash
+   python ./scripts/download_data.py
+   ```
+
+* (Optional) Download pretrained weights: [<img src="https://img.shields.io/badge/OneDrive-blue"/>](https://1drv.ms/f/s!AseUjD457t0Sg-ZumbwMwsOliiwDRw?e=H7I5F4) to `./ckpt/ckpt-best.pth`:
+  
+   ```bash
+   python ./scripts/download_ckpt.py
+   ```
+
 ### 🎯 Training
 
 * Start training using one of the two parallelization:
@@ -78,12 +90,6 @@ The code has been tested with Python 3.10, PyTorch 2.6.0 and CUDA 11.8.
    ./scripts/install_polyfit.sh
    ```
 
-* (Optional) Download pretrained weights: [<img src="https://img.shields.io/badge/OneDrive-blue"/>](https://1drv.ms/f/s!AseUjD457t0Sg-ZumbwMwsOliiwDRw?e=H7I5F4) to `./ckpt/ckpt-best.pth`:
-  
-   ```bash
-   python ./scripts/download_ckpt.py
-   ```
-
 * Start evaluation of the reconstruction:
   
    ```bash
@@ -108,7 +114,7 @@ Alternatively, review the main configuration file: `conf/config.yaml`.
 ## 🚧 TODOs
 
 - [x] Demo and pretrained weights
-- [ ] Dataset and evaluation script
+- [x] Dataset and evaluation script
 - [ ] Hugging Face space
 
 ## 🎓 Citation
@@ -116,7 +122,7 @@ Alternatively, review the main configuration file: `conf/config.yaml`.
 If you use PaCo in a scientific work, please consider citing the paper:
 
 <a href="https://arxiv.org/pdf/2503.08363"><img class="image" align="left" width="150px" src="./assets/paper_thumbnail.png"></a>
-<a href="https://arxiv.org/pdf/2503.08363">[paper]</a>&nbsp;&nbsp;<a href="https://arxiv.org/abs/2503.08363">[arxiv]</a><br>
+<a href="https://arxiv.org/pdf/2503.08363">[paper]</a>&nbsp;&nbsp;<a href="https://arxiv.org/abs/2503.08363">[arxiv]</a>&nbsp;&nbsp;<a href="./CITATION.bib">[bibtex]</a><br>
 ```bibtex
 @InProceedings{chen2025paco,
     title={Parametric Point Cloud Completion for Polygonal Surface Reconstruction}, 

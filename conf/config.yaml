@@ -35,6 +35,7 @@ reference_dir: ${dataset.data_path}/eval/ref_obj
 csv_path: ${output_dir}/evaluation.csv
 checkpoint_path: ./ckpt/ckpt-best.pth
 checkpoint_url: https://onedrive.live.com/download?resid=12DDEE393E8C94C7!62321&authkey=!AO-2chkMvBmbQ-k
+dataset_url: https://onedrive.live.com/download?resid=12DDEE393E8C94C7!62512&authkey=!AEikOHAvUCFN474&e=4W7OrD
 
 # optimizer settings
 optimizer: 
