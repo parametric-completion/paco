@@ -9,4 +9,7 @@ einops
 open3d
 trimesh==4.0.5
 wurlitzer
-https://github.com/LiangliangNan/PolyFit/releases/download/v1.6.0/polyfit-1.6.0-cp311-cp311-linux_x86_64.whl
+https://github.com/LiangliangNan/PolyFit/releases/download/v1.6.0/polyfit-1.6.0-cp310-cp310-linux_x86_64.whl; python_version == '3.10'
+https://github.com/LiangliangNan/PolyFit/releases/download/v1.6.0/polyfit-1.6.0-cp311-cp311-linux_x86_64.whl; python_version == '3.11'
+https://github.com/LiangliangNan/PolyFit/releases/download/v1.6.0/polyfit-1.6.0-cp312-cp312-linux_x86_64.whl; python_version == '3.12'
+https://github.com/LiangliangNan/PolyFit/releases/download/v1.6.0/polyfit-1.6.0-cp313-cp313-linux_x86_64.whl; python_version == '3.13'
