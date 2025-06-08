@@ -2,8 +2,10 @@
 
 **CVPR 2025**
 
-[![Website](https://img.shields.io/badge/Project-Website-blue)](https://parametric-completion.github.io)
+[![Website](https://img.shields.io/badge/%F0%9F%A4%8D%20Project%20-Website-blue)](https://parametric-completion.github.io)
 [![arXiv](https://img.shields.io/badge/arXiv-PDF-b31b1b)](https://arxiv.org/abs/2503.08363)
+[![Hugging Face Model](https://img.shields.io/badge/🤗%20Hugging%20Face%20-Model-yellow)](https://huggingface.co/chenzhaiyu/paco)
+[![Colab Demo](https://img.shields.io/badge/Colab-Demo-FF6F00?logo=googlecolab&logoColor=yellow)](https://colab.research.google.com/github/parametric-completion/paco/blob/main/demo/demo.ipynb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://raw.githubusercontent.com/parametric-completion/paco/main/LICENSE)
 
 -----
@@ -54,7 +56,7 @@ The code has been tested with Python 3.10, PyTorch 2.6.0 and CUDA 11.8.
    python ./scripts/download_data.py
    ```
 
-* (Optional) Download pretrained weights: [<img src="https://img.shields.io/badge/OneDrive-blue"/>](https://1drv.ms/f/s!AseUjD457t0Sg-Zwn4_-eHKu8NKIWg?e=fhSKvn) to `./ckpt/ckpt-best.pth`:
+* (Optional) Download pretrained weights: [<img src="https://img.shields.io/badge/OneDrive-blue"/>](https://1drv.ms/f/s!AseUjD457t0Sg-Zwn4_-eHKu8NKIWg?e=fhSKvn) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face%20-yellow)](https://huggingface.co/chenzhaiyu/paco) to `./ckpt/ckpt-best.pth`:
   
    ```bash
    python ./scripts/download_ckpt.py
@@ -113,20 +115,22 @@ Alternatively, review the main configuration file: `conf/config.yaml`.
 
 - [x] Demo and pretrained weights
 - [x] Dataset and evaluation script
-- [ ] Hugging Face space
+- [x] Hugging Face model
 
 ## 🎓 Citation
 
 If you use PaCo in a scientific work, please consider citing the paper:
 
-<a href="https://arxiv.org/pdf/2503.08363"><img class="image" align="left" width="150px" src="./assets/paper_thumbnail.png"></a>
-<a href="https://arxiv.org/pdf/2503.08363">[paper]</a>&nbsp;&nbsp;<a href="https://arxiv.org/abs/2503.08363">[arxiv]</a>&nbsp;&nbsp;<a href="./CITATION.bib">[bibtex]</a><br>
+<a href="https://arxiv.org/pdf/2503.08363"><img class="image" align="left" width="190px" src="./assets/paper_thumbnail.png"></a>
+<a href="https://openaccess.thecvf.com/content/CVPR2025/papers/Chen_Parametric_Point_Cloud_Completion_for_Polygonal_Surface_Reconstruction_CVPR_2025_paper.pdf">[paper]</a>&nbsp;&nbsp;<a href="https://openaccess.thecvf.com/content/CVPR2025/supplemental/Chen_Parametric_Point_Cloud_CVPR_2025_supplemental.pdf">[supplemental]</a>&nbsp;&nbsp;<a href="https://arxiv.org/abs/2503.08363">[arxiv]</a>&nbsp;&nbsp;<a href="./CITATION.bib">[bibtex]</a><br>
 ```bibtex
 @InProceedings{chen2025paco,
-    title={Parametric Point Cloud Completion for Polygonal Surface Reconstruction}, 
-    author={Zhaiyu Chen and Yuqing Wang and Liangliang Nan and Xiao Xiang Zhu},
-    booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-    year={2025}
+    title = {Parametric Point Cloud Completion for Polygonal Surface Reconstruction}, 
+    author = {Zhaiyu Chen and Yuqing Wang and Liangliang Nan and Xiao Xiang Zhu},
+    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+    month = {June},
+    year = {2025},
+    pages = {11749-11758}
 }
 ```
 <br clear="left"/>
